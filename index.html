@@ -1,0 +1,670 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Stashly</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1f9d78">
+<meta name="description" content="Stashly: set aside a little each paycheck for upcoming bills and goals.">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Stashly">
+<meta name="format-detection" content="telephone=no">
+<style>
+:root{--g:#1f9d78;--g2:#147a5b;--gl:#e3f5ee;--bg:#f3faf7;--ink:#1d2b27;--mut:#62736e;--card:#fff;--line:#dbe8e3;
+--warn:#b45309;--warnbg:#fff4e0;--bad:#b3261e;--badbg:#fde8e6;--ok:#147a5b;--gold:#f5b73b;
+--sb:env(safe-area-inset-bottom,0px);--st:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-text-size-adjust:100%}
+body{padding-bottom:calc(84px + var(--sb))}
+header.top{background:linear-gradient(160deg,var(--g),var(--g2));color:#fff;padding:calc(14px + var(--st)) 18px 16px;position:sticky;top:0;z-index:5}
+header.top h1{margin:0;font-size:21px;letter-spacing:.2px}
+header.top p{margin:2px 0 0;font-size:13px;opacity:.9}
+main{max-width:640px;margin:0 auto;padding:14px 14px 20px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;margin:0 0 14px;box-shadow:0 1px 2px rgba(20,60,50,.05)}
+.card h2{margin:0 0 8px;font-size:17px}
+.muted{color:var(--mut);font-size:14px}
+.small{font-size:13px}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.row.top{align-items:flex-start}
+.big{font-size:40px;font-weight:800;line-height:1.05;letter-spacing:-.5px}
+.hero{background:linear-gradient(160deg,#ffffff,var(--gl))}
+.bar{height:14px;background:#e6efec;border-radius:99px;overflow:hidden;margin:10px 0 6px}
+.bar>i{display:block;height:100%;background:linear-gradient(90deg,#37c08f,var(--g));border-radius:99px;transition:width .3s}
+.bar.warn>i{background:linear-gradient(90deg,#f6c453,#e69a14)}
+.bar.bad>i{background:linear-gradient(90deg,#f1857d,var(--bad))}
+.bar.thin{height:10px;margin:8px 0 4px}
+button,.btn{font:inherit;font-weight:700;min-height:48px;padding:0 18px;border-radius:14px;border:2px solid var(--g);background:#fff;color:var(--g2);cursor:pointer;touch-action:manipulation}
+button:active{transform:scale(.98)}
+button.primary{background:var(--g);color:#fff;border-color:var(--g)}
+button.danger{background:var(--bad);border-color:var(--bad);color:#fff}
+button.ghost{border-color:var(--line);color:var(--ink);font-weight:600}
+button.block{width:100%}
+button.huge{min-height:62px;font-size:19px;border-radius:18px}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.btns button{flex:1 1 auto;min-width:96px}
+.chip{display:inline-block;font-size:12px;font-weight:700;padding:3px 10px;border-radius:99px;background:var(--gl);color:var(--ok);white-space:nowrap}
+.chip.warn{background:var(--warnbg);color:var(--warn)}.chip.bad{background:var(--badbg);color:var(--bad)}.chip.gray{background:#eceff0;color:#56656a}
+.banner{border-radius:14px;padding:12px 14px;margin:0 0 12px;font-size:15px;font-weight:600}
+.banner.warn{background:var(--warnbg);color:#7a3b00;border:1px solid #f1d29b}
+.banner.bad{background:var(--badbg);color:#7d1710;border:1px solid #f2b8b3}
+.banner.ok{background:var(--gl);color:var(--g2);border:1px solid #bfe6d7}
+label{display:block;font-weight:700;font-size:14px;margin:12px 0 6px}
+input,select{font:inherit;font-size:16px;width:100%;min-height:50px;padding:0 14px;border-radius:14px;border:2px solid var(--line);background:#fff;color:var(--ink)}
+input:focus,select:focus{outline:none;border-color:var(--g)}
+input[type=date]{min-width:0}
+.money{position:relative}.money input{padding-left:30px}.money:before{content:"$";position:absolute;left:14px;top:13px;color:var(--mut);font-weight:700}
+.billrow{display:grid;grid-template-columns:1fr 112px 48px;gap:8px;margin-bottom:8px;align-items:center}
+.billrow button{padding:0;min-width:48px}
+nav.tabs{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line);display:flex;padding:6px 6px calc(6px + var(--sb));z-index:10}
+nav.tabs button{flex:1;border:0;background:none;color:var(--mut);font-size:12px;min-height:56px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border-radius:12px;padding:0 2px}
+nav.tabs button span{font-size:22px;line-height:1}
+nav.tabs button.on{color:var(--g2);background:var(--gl)}
+.tl{position:relative;margin:4px 0 0 10px;padding-left:20px;border-left:3px solid var(--line)}
+.ev{position:relative;padding:8px 0 12px}
+.ev:before{content:"";position:absolute;left:-29px;top:12px;width:13px;height:13px;border-radius:50%;background:var(--g);border:3px solid #fff;box-shadow:0 0 0 2px var(--g)}
+.ev.due:before{background:var(--gold);box-shadow:0 0 0 2px #e69a14;border-radius:4px}
+.ev.late:before{background:var(--bad);box-shadow:0 0 0 2px var(--bad)}
+.ev>b{display:block}
+.mini{display:flex;justify-content:space-between;gap:8px;padding:9px 0;border-top:1px solid var(--line);font-size:15px}
+.mini:first-of-type{border-top:0}
+.compact{padding:12px 0;border-top:1px solid var(--line);cursor:pointer}
+.compact:first-child{border-top:0}
+.overlay{position:fixed;inset:0;background:rgba(10,30,25,.5);z-index:50;display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:#fff;width:100%;max-width:640px;border-radius:22px 22px 0 0;padding:18px 16px calc(18px + var(--sb));max-height:90vh;overflow:auto}
+.sheet h3{margin:0 0 6px;font-size:19px}
+.sheet .btns button{min-width:120px}
+#toast{position:fixed;left:12px;right:12px;bottom:calc(92px + var(--sb));background:#1d2b27;color:#fff;border-radius:14px;padding:12px 14px;display:none;z-index:60;align-items:center;justify-content:space-between;gap:10px;max-width:616px;margin:0 auto}
+#toast button{min-height:38px;background:none;color:#8fe3c4;border:0;padding:0 8px}
+.empty{text-align:center;padding:18px 8px}
+details summary{min-height:44px;display:flex;align-items:center;font-weight:700;cursor:pointer}
+@media (min-width:700px){body{padding-bottom:100px}}
+</style>
+</head>
+<body>
+<header class="top"><h1>💰 Stashly</h1><p id="sub">Set aside a little every payday for upcoming bills and goals.</p></header>
+<main id="app"></main>
+<nav class="tabs" id="tabs"></nav>
+<div id="toast"><span id="toastMsg"></span><button id="toastBtn">Undo</button></div>
+
+<script>
+/*==CORE==*/
+'use strict';
+const DAY = 86400000;
+const PPM = { weekly: 52 / 12, biweekly: 26 / 12, semimonthly: 2, monthly: 1 };   // paychecks per month
+const FREQ_LABEL = { weekly: 'Weekly', biweekly: 'Every 2 weeks', semimonthly: 'Twice a month', monthly: 'Monthly' };
+const REPEAT_LABEL = { once: 'One time', every6: 'Every 6 months', yearly: 'Yearly', reserve: 'Rolling reserve' };
+const p2 = (n) => String(n).padStart(2, '0');
+const pd = (s) => { const [y, m, d] = s.split('-').map(Number); return Date.UTC(y, m - 1, d); };
+const fd = (ms) => { const t = new Date(ms); return t.getUTCFullYear() + '-' + p2(t.getUTCMonth() + 1) + '-' + p2(t.getUTCDate()); };
+const todayStr = () => { const n = new Date(); return n.getFullYear() + '-' + p2(n.getMonth() + 1) + '-' + p2(n.getDate()); };
+const dim = (y, m0) => new Date(Date.UTC(y, m0 + 1, 0)).getUTCDate();
+const addDays = (s, n) => fd(pd(s) + n * DAY);
+const dayOf = (s) => Number(s.slice(8, 10));
+const daysBetween = (a, b) => Math.round((pd(b) - pd(a)) / DAY);
+const toC = (x) => { x = Number(x); return Number.isFinite(x) ? Math.round(x * 100) : 0; };
+const fromC = (c) => c / 100;
+// add n months, keeping an anchor day-of-month but clamping to month end (Jan 31 + 1 month = Feb 28/29)
+function addMonths(s, n, anchorDay) {
+  const [y, m, d] = s.split('-').map(Number);
+  const t = y * 12 + (m - 1) + n, ny = Math.floor(t / 12), nm = t % 12;
+  return ny + '-' + p2(nm + 1) + '-' + p2(Math.min(anchorDay || d, dim(ny, nm)));
+}
+// Semi-monthly: anchor on 15th or 28-31st => 15th + last day. Otherwise the anchor day and the day 15 apart (e.g. 1st & 16th).
+function semiDays(a) {
+  if (a >= 28 || a === 15) return [15, 'E'];
+  if (a < 15) return [a, a + 15];
+  return [a - 15, a];
+}
+function nextPay(s, freq, anchorDay) {
+  if (freq === 'weekly') return addDays(s, 7);
+  if (freq === 'biweekly') return addDays(s, 14);
+  if (freq === 'monthly') return addMonths(s, 1, anchorDay || dayOf(s));
+  // semimonthly
+  const [y, m] = s.split('-').map(Number), d = dayOf(s);
+  const resolve = (v, yy, mm0) => (v === 'E' ? dim(yy, mm0) : Math.min(v, dim(yy, mm0)));
+  const spec = semiDays(anchorDay || d);
+  const days = spec.map((v) => resolve(v, y, m - 1)).sort((a, b) => a - b);
+  const nxt = days.find((x) => x > d);
+  if (nxt) return y + '-' + p2(m) + '-' + p2(nxt);
+  const t = y * 12 + (m - 1) + 1, ny = Math.floor(t / 12), nm = t % 12;
+  const first = spec.map((v) => resolve(v, ny, nm)).sort((a, b) => a - b)[0];
+  return ny + '-' + p2(nm + 1) + '-' + p2(first);
+}
+// paydays starting at setup.nextPayday; stops at `untilStr` (inclusive) or `max` entries
+function genPaydays(setup, max, untilStr) {
+  const out = []; let cur = setup.nextPayday;
+  while (out.length < max && (!untilStr || cur <= untilStr)) { out.push(cur); cur = nextPay(cur, setup.freq, setup.anchorDay); }
+  return out;
+}
+function rollMonths(due, months, anchor, minDate) {
+  let d = due, guard = 0;
+  do { d = addMonths(d, months, anchor); } while (d < minDate && ++guard < 600);
+  return d;
+}
+const repeatMonths = (r) => (r === 'every6' ? 6 : r === 'yearly' ? 12 : r === 'reserve' ? 6 : 0);
+// reserve "fund by" date that has already passed rolls forward 6 months at a time
+function effectiveDue(b, today) {
+  if (b.repeat === 'reserve' && b.due < today) return rollMonths(b.due, 6, b.anchorDay || dayOf(b.due), today);
+  return b.due;
+}
+function calcBucket(b, setup, today) {
+  const amountC = toC(b.amount), savedC = toC(b.saved);
+  const remC = Math.max(0, amountC - savedC);
+  const due = effectiveDue(b, today);
+  const paydays = genPaydays(setup, 600, due);
+  const n = paydays.length;
+  let perC = 0, status;
+  if (remC === 0) status = 'funded';
+  else if (n === 0) { perC = remC; status = due < today ? 'overdue' : 'urgent'; }
+  else { perC = Math.ceil(remC / n); status = 'ontrack'; }
+  const covered = remC === 0 || (n > 0 && savedC + perC * n >= amountC);
+  return {
+    id: b.id, name: b.name, repeat: b.repeat, due, dueRaw: b.due, amountC, savedC, remC, n, perC, status,
+    progress: amountC > 0 ? Math.min(1, savedC / amountC) : 1, daysLeft: daysBetween(today, due),
+    covered, shortC: covered ? 0 : Math.max(0, amountC - savedC - (n > 0 ? perC * n : 0)),
+  };
+}
+function computePlan(st, today) {
+  const setup = st.setup, ppm = PPM[setup.freq] || 1, takeC = toC(setup.takeHome);
+  const rows = st.buckets.filter((b) => !b.done).map((b) => calcBucket(b, setup, today))
+    .sort((a, b) => (a.due < b.due ? -1 : a.due > b.due ? 1 : 0));
+  const totalPerC = rows.reduce((s, r) => s + r.perC, 0);
+  const savedC = rows.reduce((s, r) => s + r.savedC, 0), targetC = rows.reduce((s, r) => s + r.amountC, 0);
+  const billsMonthC = (st.bills || []).reduce((s, b) => s + toC(b.amount), 0);
+  const billsPerC = Math.round(billsMonthC / ppm);
+  const pct = takeC > 0 ? totalPerC / takeC : null;
+  const leftC = takeC - totalPerC, leftAfterBillsC = takeC - totalPerC - billsPerC;
+  const warnings = [];
+  const $ = (c) => '$' + (c / 100).toFixed(2);
+  if (takeC <= 0) warnings.push({ level: 'warn', text: 'Add your take-home pay in Setup to see how much to set aside.' });
+  else {
+    if (pct > 1) warnings.push({ level: 'bad', text: `This plan needs ${$(totalPerC)} every paycheck, which is more than your whole ${$(takeC)} paycheck (${Math.round(pct * 100)}%). It can't work as set up. Try later due dates, smaller amounts, or covering a bill another way.` });
+    else if (pct > 0.5) warnings.push({ level: 'bad', text: `That's ${Math.round(pct * 100)}% of every paycheck. Not realistic for most people. Try moving a due date later or lowering a target.` });
+    else if (pct > 0.3) warnings.push({ level: 'warn', text: `That's ${Math.round(pct * 100)}% of every paycheck, which is a lot. Check that it leaves enough for everything else.` });
+    if (pct <= 1 && billsPerC > 0 && leftAfterBillsC < 0) warnings.push({ level: 'bad', text: `After your monthly bills (about ${$(billsPerC)} per paycheck), you'd be short ${$(-leftAfterBillsC)} every paycheck.` });
+  }
+  rows.filter((r) => r.status === 'overdue' || r.status === 'urgent').forEach((r) => warnings.push({
+    level: 'bad',
+    text: r.status === 'overdue'
+      ? `${r.name} is past its due date. You still need ${$(r.remC)}. Pay it from other money, then tap "I paid it".`
+      : `${r.name} is due before your next payday. You'll need ${$(r.remC)} from money you already have.`,
+  }));
+  return { rows, ppm, takeC, totalPerC, savedC, targetC, billsMonthC, billsPerC, pct, leftC, leftAfterBillsC, warnings, danger: warnings.some((w) => w.level === 'bad') };
+}
+function buildForecast(st, plan, today) {
+  const setup = st.setup, rows = plan.rows;
+  let paydays = [];
+  if (setup.nextPayday) {
+    const lastDue = rows.reduce((m, r) => (r.due > m ? r.due : m), setup.nextPayday);
+    const six = genPaydays(setup, 6).pop();
+    const end = lastDue > six ? lastDue : six;
+    paydays = genPaydays(setup, 30, end);
+  }
+  let cum = 0;
+  const paychecks = paydays.map((date, i) => {
+    const addC = rows.reduce((s, r) => s + (r.perC > 0 && r.n > 0 && date <= r.due ? r.perC : 0), 0);
+    cum += addC;
+    return { i: i + 1, date, addC, cumC: cum, late: date <= today, dues: [] };
+  });
+  // which pockets come due between this paycheck and the next
+  paychecks.forEach((p, i) => {
+    const nextD = i + 1 < paychecks.length ? paychecks[i + 1].date : '9999-12-31';
+    p.dues = rows.filter((r) => r.due >= p.date && r.due < nextD).map((r) => r.name);
+  });
+  const events = [];
+  paychecks.forEach((p) => events.push({ type: 'pay', date: p.date, p }));
+  rows.forEach((r) => events.push({ type: 'due', date: r.due, r }));
+  events.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : a.type === 'pay' ? -1 : 1));
+  return { paychecks, events, coverage: rows, savedC: plan.savedC, truncated: paychecks.length >= 30 };
+}
+const clone = (o) => JSON.parse(JSON.stringify(o));
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+function pushHistory(st, today, text) { st.history = st.history || []; st.history.unshift({ d: today, t: text }); st.history = st.history.slice(0, 60); }
+const money = (c) => '$' + fromC(c).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+// "I got paid": add this paycheck's set-aside to each pocket, move to the next payday
+function checkin(st, today) {
+  const s = clone(st), plan = computePlan(s, today);
+  let total = 0;
+  plan.rows.forEach((r) => {
+    const b = s.buckets.find((x) => x.id === r.id);
+    b.saved = fromC(toC(b.saved) + r.perC); total += r.perC;
+  });
+  const paid = s.setup.nextPayday;
+  s.setup.nextPayday = nextPay(paid, s.setup.freq, s.setup.anchorDay);
+  pushHistory(s, today, `Payday ${paid}: set aside ${money(total)}`);
+  return s;
+}
+// "I paid it": spend from a pocket. Repeating pockets roll their due date; one-time pockets are marked paid.
+function logSpend(st, id, paid, today) {
+  const s = clone(st), b = s.buckets.find((x) => x.id === id);
+  if (!b) return s;
+  paid = Math.max(0, Number(paid) || 0);
+  const leftC = Math.max(0, toC(b.saved) - toC(paid));
+  b.saved = fromC(leftC);
+  if (b.repeat === 'once') { b.done = true; b.saved = 0; }
+  else if (b.repeat === 'reserve') { if (b.due < today) b.due = effectiveDue(b, today); }
+  else b.due = rollMonths(b.due, repeatMonths(b.repeat), b.anchorDay || dayOf(b.due), today);
+  pushHistory(s, today, `Paid ${b.name}: ${money(toC(paid))}`);
+  return s;
+}
+function newBucket(o) {
+  const due = o.due;
+  return Object.assign({ id: uid(), name: 'New pocket', amount: 0, due, repeat: 'once', saved: 0, anchorDay: dayOf(due), done: false }, o, { anchorDay: dayOf(due) });
+}
+function seedState(today) {
+  const m = (n) => addMonths(today, n, 1);
+  const pay = addDays(today, 7);
+  return {
+    v: 1,
+    setup: { freq: 'biweekly', nextPayday: pay, anchorDay: dayOf(pay), takeHome: 0, configured: false },
+    bills: [],
+    buckets: [
+      // Examples (example: true): clearly marked in the UI, editable and deletable.
+      newBucket({ id: 'ins', name: 'Car insurance', amount: 600, repeat: 'every6', due: m(2), example: true }),
+      newBucket({ id: 'reg', name: 'Registration', amount: 150, repeat: 'yearly', due: m(5), example: true }),
+      newBucket({ id: 'tires', name: 'Tires', amount: 500, repeat: 'yearly', due: m(9), example: true }),
+      newBucket({ id: 'fix', name: 'Repairs & maintenance', amount: 500, repeat: 'reserve', due: m(6), example: true }),
+      newBucket({ id: 'phone', name: 'Phone bill', amount: 240, repeat: 'yearly', due: m(4), example: true }),
+      newBucket({ id: 'emerg', name: 'Emergency fund', amount: 1000, repeat: 'reserve', due: m(12), example: true }),
+      newBucket({ id: 'fun', name: 'Fun money', amount: 200, repeat: 'reserve', due: m(3), example: true }),
+    ],
+    history: [],
+  };
+}
+function validState(o) {
+  return o && typeof o === 'object' && o.setup && FREQ_LABEL[o.setup.freq] && /^\d{4}-\d{2}-\d{2}$/.test(o.setup.nextPayday || '') &&
+    Array.isArray(o.buckets) && o.buckets.every((b) => b && typeof b.name === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(b.due || '') && REPEAT_LABEL[b.repeat]);
+}
+/*==END CORE==*/
+
+/*==XLSX==*/
+// ---- minimal XLSX writer: STORED (no compression) ZIP + hand-written SpreadsheetML parts ----
+const CRC_T = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+function crc32(u8) { let c = 0xffffffff; for (let i = 0; i < u8.length; i++) c = CRC_T[(c ^ u8[i]) & 255] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0; }
+function zipStore(files) {          // files: [{name, data:Uint8Array}]
+  const enc = new TextEncoder(), parts = [], central = []; let off = 0;
+  const now = new Date(), dt = ((now.getHours() << 11) | (now.getMinutes() << 5) | (now.getSeconds() >> 1)) & 0xffff;
+  const dd = (((Math.max(now.getFullYear(), 1980) - 1980) << 9) | ((now.getMonth() + 1) << 5) | now.getDate()) & 0xffff;
+  files.forEach((f) => {
+    const name = enc.encode(f.name), crc = crc32(f.data), size = f.data.length;
+    const lh = new DataView(new ArrayBuffer(30));
+    lh.setUint32(0, 0x04034b50, true); lh.setUint16(4, 20, true); lh.setUint16(6, 0x0800, true); lh.setUint16(8, 0, true);
+    lh.setUint16(10, dt, true); lh.setUint16(12, dd, true); lh.setUint32(14, crc, true); lh.setUint32(18, size, true);
+    lh.setUint32(22, size, true); lh.setUint16(26, name.length, true); lh.setUint16(28, 0, true);
+    parts.push(new Uint8Array(lh.buffer), name, f.data);
+    const ch = new DataView(new ArrayBuffer(46));
+    ch.setUint32(0, 0x02014b50, true); ch.setUint16(4, 20, true); ch.setUint16(6, 20, true); ch.setUint16(8, 0x0800, true);
+    ch.setUint16(10, 0, true); ch.setUint16(12, dt, true); ch.setUint16(14, dd, true); ch.setUint32(16, crc, true);
+    ch.setUint32(20, size, true); ch.setUint32(24, size, true); ch.setUint16(28, name.length, true);
+    ch.setUint32(42, off, true);
+    central.push(new Uint8Array(ch.buffer), name);
+    off += 30 + name.length + size;
+  });
+  const cdSize = central.reduce((s, p) => s + p.length, 0);
+  const end = new DataView(new ArrayBuffer(22));
+  end.setUint32(0, 0x06054b50, true); end.setUint16(8, files.length, true); end.setUint16(10, files.length, true);
+  end.setUint32(12, cdSize, true); end.setUint32(16, off, true);
+  const all = parts.concat(central, [new Uint8Array(end.buffer)]), total = all.reduce((s, p) => s + p.length, 0);
+  const out = new Uint8Array(total); let o = 0; all.forEach((p) => { out.set(p, o); o += p.length; });
+  return out;
+}
+const xe = (s) => String(s).replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const colName = (i) => { let s = ''; i++; while (i > 0) { const m = (i - 1) % 26; s = String.fromCharCode(65 + m) + s; i = Math.floor((i - 1) / 26); } return s; };
+const XSTYLE = { bold: 1, money: 2, date: 3, pct: 4, moneyBold: 5, head: 6, title: 7 };
+const EXCEL_EPOCH = Date.UTC(1899, 11, 30);
+function cellXml(c, r, ci) {
+  if (c === null || c === undefined || c === '') return '';
+  const ref = colName(ci) + (r + 1);
+  const o = typeof c === 'object' ? c : { v: c };
+  const s = o.s ? ` s="${XSTYLE[o.s]}"` : '';
+  const f = o.f ? `<f>${xe(o.f)}</f>` : '';
+  if (o.s === 'date' && typeof o.v === 'string') return `<c r="${ref}"${s}><v>${(pd(o.v) - EXCEL_EPOCH) / DAY}</v></c>`;
+  if (typeof o.v === 'number' && Number.isFinite(o.v)) return `<c r="${ref}"${s}>${f}<v>${o.v}</v></c>`;
+  if (typeof o.v === 'boolean') return `<c r="${ref}"${s} t="b"><v>${o.v ? 1 : 0}</v></c>`;
+  return `<c r="${ref}"${s} t="inlineStr"><is><t xml:space="preserve">${xe(o.v)}</t></is></c>`;
+}
+function sheetXml(sh) {
+  const cols = (sh.widths || []).map((w, i) => `<col min="${i + 1}" max="${i + 1}" width="${w}" customWidth="1"/>`).join('');
+  const rows = sh.rows.map((row, r) => `<row r="${r + 1}">${row.map((c, ci) => cellXml(c, r, ci)).join('')}</row>`).join('');
+  const pane = sh.freeze ? `<sheetViews><sheetView workbookViewId="0"><pane ySplit="${sh.freeze}" topLeftCell="A${sh.freeze + 1}" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>` : '';
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">${pane}${cols ? `<cols>${cols}</cols>` : ''}<sheetData>${rows}</sheetData></worksheet>`;
+}
+const STYLES_XML = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+<numFmts count="3"><numFmt numFmtId="164" formatCode="&quot;$&quot;#,##0.00"/><numFmt numFmtId="165" formatCode="mmm\\ d\\,\\ yyyy"/><numFmt numFmtId="166" formatCode="0.0%"/></numFmts>
+<fonts count="4"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font><font><b/><sz val="16"/><color rgb="FF147A5B"/><name val="Calibri"/></font></fonts>
+<fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF1F9D78"/><bgColor indexed="64"/></patternFill></fill></fills>
+<borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>
+<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
+<cellXfs count="8">
+<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>
+<xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/>
+<xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>
+<xf numFmtId="165" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="left"/></xf>
+<xf numFmtId="166" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>
+<xf numFmtId="164" fontId="1" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyFont="1"/>
+<xf numFmtId="0" fontId="2" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment wrapText="1" vertical="center"/></xf>
+<xf numFmtId="0" fontId="3" fillId="0" borderId="0" xfId="0" applyFont="1"/>
+</cellXfs>
+<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>
+</styleSheet>`;
+function buildXlsx(sheets) {         // sheets: [{name, rows, widths, freeze}] -> Uint8Array (.xlsx)
+  const enc = new TextEncoder(), X = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n';
+  const files = [
+    ['[Content_Types].xml', X + '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>' +
+      sheets.map((_, i) => `<Override PartName="/xl/worksheets/sheet${i + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join('') +
+      '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>'],
+    ['_rels/.rels', X + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>'],
+    ['xl/workbook.xml', X + '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>' +
+      sheets.map((s, i) => `<sheet name="${xe(s.name.replace(/[\[\]:*?\/\\]/g, '').slice(0, 31))}" sheetId="${i + 1}" r:id="rId${i + 1}"/>`).join('') + '</sheets></workbook>'],
+    ['xl/_rels/workbook.xml.rels', X + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+      sheets.map((_, i) => `<Relationship Id="rId${i + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i + 1}.xml"/>`).join('') +
+      `<Relationship Id="rId${sheets.length + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`],
+    ['xl/styles.xml', STYLES_XML],
+  ].concat(sheets.map((s, i) => [`xl/worksheets/sheet${i + 1}.xml`, sheetXml(s)]));
+  return zipStore(files.map(([name, text]) => ({ name, data: enc.encode(text) })));
+}
+// the three sheets: Summary, Pockets, Paycheck forecast
+function reportSheets(st, today) {
+  const plan = computePlan(st, today), fc = buildForecast(st, plan, today), d = fromC;
+  const H = (a) => a.map((t) => ({ v: t, s: 'head' })), $ = (c, s) => ({ v: d(c), s: s || 'money' });
+  const rows = plan.rows, n = rows.length;
+  const summary = [
+    [{ v: 'Stashly Summary', s: 'title' }], [],
+    [{ v: 'Generated', s: 'bold' }, { v: today, s: 'date' }],
+    [{ v: 'Pay frequency', s: 'bold' }, FREQ_LABEL[st.setup.freq]],
+    [{ v: 'Next payday', s: 'bold' }, { v: st.setup.nextPayday, s: 'date' }],
+    [{ v: 'Take-home per paycheck', s: 'bold' }, $(plan.takeC)],
+    [{ v: 'Set aside per paycheck (all pockets)', s: 'bold' }, n ? { v: d(plan.totalPerC), f: `Pockets!H${n + 2}`, s: 'moneyBold' } : $(0, 'moneyBold')],
+    [{ v: 'Share of take-home', s: 'bold' }, plan.pct === null ? 'n/a' : { v: plan.pct, s: 'pct' }],
+    [{ v: 'Left to spend per paycheck (before bills)', s: 'bold' }, $(plan.leftC)],
+    [{ v: 'Other monthly bills', s: 'bold' }, $(plan.billsMonthC)],
+    [{ v: 'Bills share per paycheck (approx.)', s: 'bold' }, $(plan.billsPerC)],
+    [{ v: 'Left to spend per paycheck (after bills)', s: 'bold' }, $(plan.leftAfterBillsC, 'moneyBold')],
+    [{ v: 'Total saved so far', s: 'bold' }, $(plan.savedC)],
+    [{ v: 'Total target', s: 'bold' }, $(plan.targetC)],
+    [],
+    [{ v: 'Warnings', s: 'bold' }],
+  ];
+  if (plan.warnings.length) plan.warnings.forEach((w) => summary.push([w.text])); else summary.push(['None. The plan looks workable.']);
+  if ((st.bills || []).length) { summary.push([], H(['Other monthly bill', 'Amount'])); st.bills.forEach((b) => summary.push([b.name, $(toC(b.amount))])); }
+  const buckets = [H(['Pocket', 'Repeat', 'Due date', 'Target', 'Saved', 'Remaining', 'Paychecks left', 'Per paycheck', 'Progress', 'Status'])];
+  const stLabel = { funded: 'Fully funded', ontrack: 'On track', urgent: 'Due before next payday', overdue: 'Past due' };
+  rows.forEach((r, i) => {
+    const R = i + 2;
+    buckets.push([r.name, REPEAT_LABEL[r.repeat], { v: r.due, s: 'date' }, $(r.amountC), $(r.savedC),
+      { v: d(r.remC), f: `MAX(0,D${R}-E${R})`, s: 'money' }, r.n, $(r.perC), { v: r.progress, s: 'pct' }, stLabel[r.status]]);
+  });
+  if (n) buckets.push([{ v: 'Total', s: 'bold' }, '', '',
+    { v: d(plan.targetC), f: `SUM(D2:D${n + 1})`, s: 'moneyBold' }, { v: d(plan.savedC), f: `SUM(E2:E${n + 1})`, s: 'moneyBold' },
+    { v: d(rows.reduce((s, r) => s + r.remC, 0)), f: `SUM(F2:F${n + 1})`, s: 'moneyBold' }, '',
+    { v: d(plan.totalPerC), f: `SUM(H2:H${n + 1})`, s: 'moneyBold' }]);
+  const fcast = [H(['#', 'Payday', 'Set aside', 'Cumulative set aside', 'Saved so far + cumulative', 'Pocket due before next payday'])];
+  fc.paychecks.forEach((p, i) => {
+    const R = i + 2;
+    fcast.push([p.i, { v: p.date, s: 'date' }, $(p.addC), { v: d(p.cumC), f: `SUM(C$2:C${R})`, s: 'money' }, { v: d(p.cumC + plan.savedC), f: `D${R}+${d(plan.savedC)}`, s: 'money' }, p.dues.join(', ')]);
+  });
+  return [
+    { name: 'Summary', rows: summary, widths: [42, 24] },
+    { name: 'Pockets', rows: buckets, widths: [26, 16, 15, 12, 12, 12, 10, 13, 10, 24], freeze: 1 },
+    { name: 'Paycheck forecast', rows: fcast, widths: [6, 15, 13, 20, 24, 34], freeze: 1 },
+  ];
+}
+function toCsv(sheets) {
+  const q = (v) => { v = v === null || v === undefined ? '' : typeof v === 'object' ? v.v : v; v = String(v); return /[",\n\r]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+  return '\ufeff' + sheets.map((s) => `${s.name}\r\n` + s.rows.map((r) => r.map(q).join(',')).join('\r\n')).join('\r\n\r\n') + '\r\n';
+}
+/*==END XLSX==*/
+
+if (typeof document === 'undefined') { module.exports = { nextPay, genPaydays, addMonths, addDays, calcBucket, computePlan, buildForecast, checkin, logSpend, seedState, validState, buildXlsx, reportSheets, toCsv, crc32, zipStore, semiDays, effectiveDue, rollMonths, daysBetween, toC, newBucket }; }
+else (function ui() {
+/*==UI==*/
+const KEY = 'stashly.v1';
+let mem = null;
+const store = { get() { try { return localStorage.getItem(KEY); } catch (e) { return mem; } }, set(v) { try { localStorage.setItem(KEY, v); } catch (e) { mem = v; } }, del() { try { localStorage.removeItem(KEY); } catch (e) { mem = null; } } };
+let st; try { const raw = store.get(); st = raw ? JSON.parse(raw) : null; } catch (e) { st = null; }
+if (!validState(st)) st = seedState(todayStr());
+st.bills = st.bills || []; st.history = st.history || [];
+const save = () => store.set(JSON.stringify(st));
+save();
+let tab = (location.hash || '#plan').slice(1); if (!['plan', 'buckets', 'forecast', 'setup'].includes(tab)) tab = 'plan';
+let undoSnap = null, toastT = null;
+const $app = document.getElementById('app'), $ = (s, r) => (r || document).querySelector(s);
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const fmtD = (s, long) => { const o = { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' }; if (long || s.slice(0, 4) !== todayStr().slice(0, 4)) o.year = 'numeric'; return new Date(pd(s)).toLocaleDateString('en-US', o); };
+const inDays = (s) => { const n = daysBetween(todayStr(), s); return n === 0 ? 'today' : n === 1 ? 'tomorrow' : n === -1 ? 'yesterday' : n > 0 ? `in ${n} days` : `${-n} days ago`; };
+const pctTxt = (p) => (p === null ? '–' : (p * 100 < 10 ? (p * 100).toFixed(1) : Math.round(p * 100)) + '%');
+const statusChip = (r) => ({ funded: '<span class="chip">Fully funded ✓</span>', ontrack: '<span class="chip">On track</span>', urgent: '<span class="chip warn">Due before payday</span>', overdue: '<span class="chip bad">Past due</span>' }[r.status]);
+const commit = (msg, snap) => { if (snap) undoSnap = snap; save(); render(); if (msg) toast(msg, !!snap); };
+
+function toast(msg, withUndo) {
+  const t = $('#toast'); $('#toastMsg').textContent = msg; $('#toastBtn').style.display = withUndo ? '' : 'none';
+  t.style.display = 'flex'; clearTimeout(toastT); toastT = setTimeout(() => (t.style.display = 'none'), withUndo ? 8000 : 3500);
+}
+$('#toastBtn').onclick = () => { if (undoSnap) { st = undoSnap; undoSnap = null; save(); render(); } $('#toast').style.display = 'none'; };
+
+function openModal(title, body, buttons) {
+  closeModal();
+  const o = document.createElement('div'); o.className = 'overlay'; o.id = 'modal';
+  o.innerHTML = `<div class="sheet" role="dialog" aria-modal="true"><h3>${esc(title)}</h3><div>${body}</div><div class="btns"></div></div>`;
+  const bx = $('.btns', o);
+  buttons.forEach((b) => { const el = document.createElement('button'); el.textContent = b.label; el.className = b.cls || ''; el.onclick = () => { if (b.fn && b.fn(o) === false) return; closeModal(); }; bx.appendChild(el); });
+  o.addEventListener('click', (e) => { if (e.target === o) closeModal(); });
+  document.body.appendChild(o);
+  const f = $('input,select', o); if (f && !/iPhone|iPad/.test(navigator.userAgent)) f.focus();
+}
+const closeModal = () => { const m = $('#modal'); if (m) m.remove(); };
+const num = (el) => { const v = parseFloat(el.value); return Number.isFinite(v) && v >= 0 ? Math.round(v * 100) / 100 : 0; };
+
+/* ---------- views ---------- */
+function bucketCard(r, b) {
+  if (b.done) return `<div class="card" data-id="${b.id}"><div class="row"><b>${esc(b.name)}</b><span class="chip gray">Paid ✓</span></div><div class="muted">One-time bill paid. Plan it again with a new date, or remove it.</div><div class="btns"><button data-act="edit">Plan again</button><button class="ghost" data-act="remove">Remove</button></div></div>`;
+  const cls = r.status === 'overdue' || r.status === 'urgent' ? 'bad' : r.status === 'funded' ? '' : '';
+  const label = r.repeat === 'reserve' ? 'Fund by' : 'Due';
+  return `<div class="card" data-id="${b.id}">
+    <div class="row top"><b style="font-size:18px">${esc(b.name)}</b>${statusChip(r)}</div>${b.example ? '<div class="muted small"><span class="chip gray">Example</span> Sample pocket: edit it or delete it any time.</div>' : ''}
+    <div class="muted">${label} ${fmtD(r.due)} (${inDays(r.due)}) · ${REPEAT_LABEL[r.repeat].toLowerCase()}</div>
+    <div class="bar ${cls}"><i style="width:${Math.round(r.progress * 100)}%"></i></div>
+    <div class="row"><span><b>${money(r.savedC)}</b> of ${money(r.amountC)} <span class="muted">(${Math.round(r.progress * 100)}%)</span></span></div>
+    <div class="row" style="margin-top:6px"><span class="muted">${r.n === 0 ? (r.remC ? 'No paychecks left' : '') : r.n + ' paycheck' + (r.n > 1 ? 's' : '') + ' left'}</span><b style="color:var(--g2);font-size:17px">${r.remC ? money(r.perC) + ' / paycheck' : 'Nothing needed'}</b></div>
+    <div class="btns"><button data-act="adjust">Adjust saved</button><button class="primary" data-act="spend">I paid it</button><button class="ghost" data-act="edit">Edit</button>${b.example ? '<button class="ghost" data-act="remove">Delete</button>' : ''}</div></div>`;
+}
+function viewPlan(plan) {
+  const s = st.setup, today = todayStr();
+  let h = '';
+  if (!s.configured || plan.takeC <= 0) {
+    h += `<div class="card hero"><h2>👋 Welcome!</h2><p class="muted" style="margin:0 0 12px">Tell me how often you get paid and how much you take home. I'll work out how much to tuck away each payday so upcoming bills and goals never catch you off guard. The example pockets are just samples: edit or delete them to fit your life.</p><button class="primary huge block" data-go="setup">Start setup</button></div>`;
+  }
+  if (plan.takeC > 0) {
+    const late = genPaydays(s, 60, today).length;
+    const lateTxt = late > 1 ? `<p class="small" style="margin:6px 0 0;color:var(--warn);font-weight:700">You have ${late} paychecks to check in. Tap once for each one.</p>` : '';
+    h += `<div class="card"><div class="row top"><div><div class="muted small">Next payday</div><b style="font-size:19px">${fmtD(s.nextPayday)}</b><div class="muted small">${inDays(s.nextPayday)}</div></div><div style="text-align:right"><div class="muted small">Set aside</div><b style="font-size:19px;color:var(--g2)">${money(plan.totalPerC)}</b></div></div>
+    <button class="primary huge block" style="margin-top:12px" data-act="paid">💸 I got paid</button>${lateTxt}</div>`;
+  }
+  const lvl = plan.pct === null ? '' : plan.pct > 1 || plan.pct > .5 ? 'bad' : plan.pct > .3 ? 'warn' : '';
+  h += plan.warnings.map((w) => `<div class="banner ${w.level}">${w.level === 'bad' ? '⚠️ ' : 'ℹ️ '}${esc(w.text)}</div>`).join('');
+  if (plan.takeC > 0 && !plan.warnings.length) h += `<div class="banner ok">✅ Looks doable. You're on track to cover every bill on time.</div>`;
+  h += `<div class="card hero"><div class="muted">Set aside every paycheck</div><div class="big">${money(plan.totalPerC)}</div>
+    <div class="bar ${lvl}"><i style="width:${plan.pct === null ? 0 : Math.min(100, plan.pct * 100)}%"></i></div>
+    <div class="muted"><b>${pctTxt(plan.pct)}</b> of your ${money(plan.takeC)} take-home</div>
+    <div style="margin-top:12px"><div class="mini"><span>Left to spend this paycheck</span><b style="${plan.leftC < 0 ? 'color:var(--bad)' : ''}">${money(plan.leftC)}</b></div>
+    ${plan.billsMonthC > 0 ? `<div class="mini"><span>Monthly bills share (≈ per paycheck)</span><b>−${money(plan.billsPerC)}</b></div><div class="mini"><span><b>Left after bills</b></span><b style="${plan.leftAfterBillsC < 0 ? 'color:var(--bad)' : 'color:var(--g2)'}">${money(plan.leftAfterBillsC)}</b></div>` : ''}</div></div>`;
+  h += `<div class="card"><div class="row"><h2>Your pockets</h2><span class="muted small">${money(plan.savedC)} / ${money(plan.targetC)}</span></div>`;
+  h += plan.rows.length ? plan.rows.map((r) => `<div class="compact" data-go="buckets"><div class="row"><b>${esc(r.name)}</b><span class="muted small">${money(r.perC)}/paycheck</span></div><div class="bar thin ${r.status === 'overdue' || r.status === 'urgent' ? 'bad' : ''}"><i style="width:${Math.round(r.progress * 100)}%"></i></div><div class="row"><span class="muted small">${money(r.savedC)} of ${money(r.amountC)}</span><span class="muted small">${fmtD(r.due)}</span></div></div>`).join('') : '<p class="muted empty">No pockets yet. Add one in the Pockets tab.</p>';
+  h += '</div>';
+  if (st.history.length) h += `<div class="card"><h2>Recent activity</h2>${st.history.slice(0, 5).map((x) => `<div class="mini"><span>${esc(x.t)}</span><span class="muted small">${fmtD(x.d)}</span></div>`).join('')}</div>`;
+  return h;
+}
+function viewBuckets(plan) {
+  let h = '';
+  plan.rows.forEach((r) => { h += bucketCard(r, st.buckets.find((b) => b.id === r.id)); });
+  st.buckets.filter((b) => b.done).forEach((b) => { h += bucketCard(null, b); });
+  h += `<button class="primary huge block" data-act="add">＋ Add a pocket</button><p class="muted small" style="text-align:center">Tip: pockets marked Example are just guesses. Edit them to match your real bills, or delete the ones you don't need.</p>`;
+  return h;
+}
+function viewForecast(plan) {
+  if (!plan.rows.length) return '<div class="card empty muted">Add a pocket to see your forecast.</div>';
+  const fc = buildForecast(st, plan, todayStr());
+  let h = `<div class="card"><h2>Is each bill covered?</h2>${fc.coverage.map((r) => `<div class="mini"><span><b>${esc(r.name)}</b><br><span class="muted small">${r.repeat === 'reserve' ? 'Fund by' : 'Due'} ${fmtD(r.due)}</span></span><span style="text-align:right">${r.covered ? '<span class="chip">Covered ✓</span>' : `<span class="chip bad">Short ${money(r.shortC)}</span>`}<br><span class="muted small">${money(r.amountC)}</span></span></div>`).join('')}</div>`;
+  if (plan.takeC <= 0) h += '<div class="banner warn">Add your take-home pay in Setup for exact numbers.</div>';
+  h += `<div class="card"><h2>Timeline</h2><p class="muted small" style="margin:0 0 6px">Saved today: <b>${money(plan.savedC)}</b>. 🟢 paychecks · 🟨 bills due.</p><div class="tl">` +
+    fc.events.map((e) => {
+      if (e.type === 'pay') return `<div class="ev"><b>${fmtD(e.date)} · Paycheck ${e.p.i}</b><span>Set aside <b>${money(e.p.addC)}</b></span><div class="muted small">Total added so far ${money(e.p.cumC)} → balance ${money(e.p.cumC + plan.savedC)}</div></div>`;
+      const r = e.r, late = !r.covered;
+      return `<div class="ev due ${late ? 'late' : ''}"><b>${fmtD(e.date)} · ${esc(r.name)} ${r.repeat === 'reserve' ? 'goal' : 'due'}</b><span>${money(r.amountC)} ${late ? `<span class="chip bad">short ${money(r.shortC)}</span>` : '<span class="chip">covered ✓</span>'}</span></div>`;
+    }).join('') + `</div>${fc.truncated ? '<p class="muted small">Showing the next 30 paychecks.</p>' : ''}</div>`;
+  return h;
+}
+function viewSetup() {
+  const s = st.setup;
+  const opts = Object.keys(FREQ_LABEL).map((k) => `<option value="${k}" ${s.freq === k ? 'selected' : ''}>${FREQ_LABEL[k]}</option>`).join('');
+  return `<div class="card"><h2>💼 Your paycheck</h2>
+    <label for="f_freq">How often are you paid?</label><select id="f_freq" data-set="freq">${opts}</select>
+    <label for="f_next">Next payday</label><input id="f_next" type="date" data-set="nextPayday" value="${s.nextPayday}">
+    <label for="f_take">Take-home pay per paycheck (after taxes)</label><div class="money"><input id="f_take" type="number" inputmode="decimal" min="0" step="0.01" data-set="takeHome" value="${s.takeHome || ''}" placeholder="0.00"></div>
+    <p class="muted small" id="payPreview"></p></div>
+  <div class="card"><h2>🏠 Other monthly bills</h2><p class="muted small" style="margin:0 0 8px">Optional. Rent, phone, subscriptions, whatever repeats each month. This is just so you can see what's left.</p>
+    <div id="bills">${st.bills.map((b, i) => `<div class="billrow" data-bill="${i}"><input placeholder="Bill name" value="${esc(b.name)}" data-bn aria-label="Bill name"><div class="money"><input type="number" inputmode="decimal" min="0" step="0.01" value="${b.amount || ''}" data-ba placeholder="0.00" aria-label="Bill amount"></div><button class="ghost" data-act="delbill" aria-label="Remove bill">✕</button></div>`).join('')}</div>
+    <button data-act="addbill" class="block">＋ Add a bill</button><p class="muted small" id="billTotal"></p></div>
+  <div class="card"><h2>📤 Export & backup</h2><p class="muted small" style="margin:0 0 6px">Everything stays on this phone. These make a copy you can keep.</p>
+    <div class="btns"><button class="primary" data-act="xlsx">Export to Excel</button><button data-act="csv">Export CSV</button></div>
+    <div class="btns"><button data-act="backup">Backup (JSON)</button><button data-act="restore">Restore backup</button></div>
+    <input type="file" id="restoreFile" accept=".json,application/json" style="display:none"></div>
+  <div class="card"><h2>🧹 Start over</h2><p class="muted small" style="margin:0 0 8px">Erases everything on this phone and puts back the example pockets.</p><button class="danger block" data-act="reset">Reset everything</button></div>
+  <p class="muted small" style="text-align:center">Stashly · works offline · no accounts, no tracking</p>`;
+}
+function updateSetupLive() {
+  const s = st.setup, pp = $('#payPreview'); if (!pp) return;
+  const plan = computePlan(st, todayStr());
+  const next = genPaydays(s, 4).map((d) => fmtD(d)).join(' · ');
+  pp.innerHTML = `Next paydays: ${next}<br>About ${money(Math.round(toC(s.takeHome) * plan.ppm))} take-home per month.`;
+  const bt = $('#billTotal'); if (bt) bt.textContent = plan.billsMonthC ? `Total: ${money(plan.billsMonthC)} per month` : '';
+}
+
+const TITLES = { plan: ['Plan', '🏠'], buckets: ['Pockets', '👛'], forecast: ['Forecast', '📅'], setup: ['Setup', '⚙️'] };
+function render() {
+  const plan = computePlan(st, todayStr());
+  $('#tabs').innerHTML = Object.keys(TITLES).map((k) => `<button data-tab="${k}" class="${tab === k ? 'on' : ''}"><span>${TITLES[k][1]}</span>${TITLES[k][0]}</button>`).join('');
+  $app.innerHTML = tab === 'plan' ? viewPlan(plan) : tab === 'buckets' ? viewBuckets(plan) : tab === 'forecast' ? viewForecast(plan) : viewSetup();
+  if (tab === 'setup') updateSetupLive();
+}
+function go(t) { tab = t; history.replaceState(null, '', '#' + t); render(); window.scrollTo(0, 0); }
+
+/* ---------- actions ---------- */
+function editBucket(id) {
+  const b = id ? st.buckets.find((x) => x.id === id) : null, today = todayStr();
+  const v = b || { name: '', amount: '', repeat: 'once', due: addMonths(today, 3, 1), saved: 0 };
+  const ro = Object.keys(REPEAT_LABEL).map((k) => `<option value="${k}" ${v.repeat === k ? 'selected' : ''}>${REPEAT_LABEL[k]}</option>`).join('');
+  openModal(b ? (b.done ? 'Plan again' : 'Edit pocket') : 'New pocket', `
+    <label for="e_name">Name</label><input id="e_name" value="${esc(v.name)}" placeholder="e.g. Car insurance, Phone bill, Vacation">
+    <label for="e_amt" id="e_amtl">Amount (or target)</label><div class="money"><input id="e_amt" type="number" inputmode="decimal" min="0" step="0.01" value="${v.amount || ''}" placeholder="0.00"></div>
+    <label for="e_rep">Repeats</label><select id="e_rep">${ro}</select>
+    <label for="e_due" id="e_duel">Due date</label><input id="e_due" type="date" value="${esc(v.due)}">
+    <label for="e_sav">Saved so far</label><div class="money"><input id="e_sav" type="number" inputmode="decimal" min="0" step="0.01" value="${v.saved || 0}"></div>
+    <p class="muted small" id="e_hint"></p>`,
+    [{ label: 'Cancel', cls: 'ghost' }].concat(b && !b.done ? [{ label: 'Delete', cls: 'danger', fn: () => { if (!confirm('Delete this pocket?')) return false; const snap = clone(st); st.buckets = st.buckets.filter((x) => x.id !== id); commit('Pocket deleted', snap); } }] : []).concat([{
+      label: 'Save', cls: 'primary', fn: (o) => {
+        const name = $('#e_name', o).value.trim(), due = $('#e_due', o).value;
+        if (!name) { $('#e_name', o).focus(); return false; }
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(due)) { $('#e_due', o).focus(); return false; }
+        const rec = { example: false, name, amount: num($('#e_amt', o)), repeat: $('#e_rep', o).value, due, saved: num($('#e_sav', o)), anchorDay: dayOf(due), done: false };
+        const snap = clone(st);
+        if (b) Object.assign(b, rec); else st.buckets.push(newBucket(rec));
+        commit('Saved', snap);
+      } }]));
+  const sync = () => { const r = $('#e_rep').value; $('#e_amtl').textContent = r === 'reserve' ? 'Target to keep in reserve' : 'Amount'; $('#e_duel').textContent = r === 'reserve' ? 'Fund by (goal date)' : 'Due date'; $('#e_hint').textContent = r === 'reserve' ? 'A reserve is money you keep on hand for surprises. When you spend from it, your saved balance goes down and you rebuild it.' : r === 'once' ? 'One-time bills are marked paid after you tap "I paid it".' : 'After you tap "I paid it", the due date moves forward automatically.'; };
+  $('#e_rep').onchange = sync; sync();
+}
+function adjust(id) {
+  const b = st.buckets.find((x) => x.id === id);
+  openModal('Adjust saved: ' + b.name, `<p class="muted" style="margin-top:0">Type what you actually have set aside for this pocket right now.</p><label for="a_v">Saved so far</label><div class="money"><input id="a_v" type="number" inputmode="decimal" min="0" step="0.01" value="${b.saved || 0}"></div>`,
+    [{ label: 'Cancel', cls: 'ghost' }, { label: 'Save', cls: 'primary', fn: (o) => { const snap = clone(st); const nv = num($('#a_v', o)); pushHistory(st, todayStr(), `Adjusted ${b.name} saved to ${money(toC(nv))}`); b.saved = nv; commit('Updated', snap); } }]);
+}
+function spend(id) {
+  const b = st.buckets.find((x) => x.id === id), today = todayStr();
+  const res = b.repeat === 'reserve';
+  const nd = b.repeat === 'once' ? null : res ? null : rollMonths(b.due, repeatMonths(b.repeat), b.anchorDay || dayOf(b.due), today);
+  openModal('I paid: ' + b.name, `<label for="s_v">${res ? 'How much did you spend?' : 'How much did you pay?'}</label><div class="money"><input id="s_v" type="number" inputmode="decimal" min="0" step="0.01" value="${b.amount || ''}"></div>
+    <p class="muted small">${res ? 'This comes out of your saved reserve. Your target stays the same so you rebuild it.' : b.repeat === 'once' ? 'This one-time bill will be marked paid.' : `Your saved amount resets (any extra carries over) and the next due date becomes <b>${fmtD(nd)}</b>.`}</p>`,
+    [{ label: 'Cancel', cls: 'ghost' }, { label: 'Yes, I paid it', cls: 'primary', fn: (o) => { const snap = clone(st); st = logSpend(st, id, num($('#s_v', o)), todayStr()); commit('Nice! Logged.', snap); } }]);
+}
+function gotPaid() {
+  const plan = computePlan(st, todayStr());
+  if (plan.takeC <= 0) return go('setup');
+  const early = st.setup.nextPayday > todayStr();
+  openModal('Payday! 🎉', `${early ? `<div class="banner warn">Your next payday is ${fmtD(st.setup.nextPayday)} (${inDays(st.setup.nextPayday)}). Only add it if you were paid early.</div>` : ''}<p class="muted" style="margin-top:0">Move this much into your pockets:</p>` +
+    plan.rows.map((r) => `<div class="mini"><span>${esc(r.name)}</span><b>${money(r.perC)}</b></div>`).join('') + `<div class="mini"><b>Total</b><b style="color:var(--g2)">${money(plan.totalPerC)}</b></div>`,
+    [{ label: 'Cancel', cls: 'ghost' }, { label: 'Add to my pockets', cls: 'primary', fn: () => { const snap = clone(st); st = checkin(st, todayStr()); commit(`Added ${money(plan.totalPerC)}. Next payday ${fmtD(st.setup.nextPayday)}`, snap); } }]);
+}
+// file output: share sheet on iPhone/iPad (downloads are awkward in a home-screen app), normal download elsewhere
+async function saveFile(name, bytes, mime) {
+  const blob = new Blob([bytes], { type: mime }), file = typeof File === 'function' ? new File([blob], name, { type: mime }) : null;
+  const ios = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  if (ios && file && navigator.canShare && navigator.canShare({ files: [file] })) {
+    try { await navigator.share({ files: [file], title: name }); return; } catch (e) { if (e && e.name === 'AbortError') return; }
+  }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 4000);
+  toast('Saved ' + name);
+}
+const stamp = () => todayStr();
+function doReset() {
+  openModal('Reset everything?', '<p style="margin-top:0">This erases your pay setup, bills, pockets and savings on this phone. You can\'t undo it (unless you have a backup).</p>',
+    [{ label: 'Keep my data', cls: 'ghost' }, { label: 'Yes, erase it', cls: 'danger', fn: () => { store.del(); st = seedState(todayStr()); undoSnap = null; save(); tab = 'setup'; render(); window.scrollTo(0, 0); toast('Reset. Fresh start!'); } }]);
+}
+
+$app.addEventListener('click', (e) => {
+  const g = e.target.closest('[data-go]'); if (g) return go(g.dataset.go);
+  const el = e.target.closest('[data-act]'); if (!el) return;
+  const id = (el.closest('[data-id]') || {}).dataset ? el.closest('[data-id]').dataset.id : null, a = el.dataset.act;
+  if (a === 'paid') gotPaid();
+  else if (a === 'add') editBucket(null);
+  else if (a === 'edit') editBucket(id);
+  else if (a === 'adjust') adjust(id);
+  else if (a === 'spend') spend(id);
+  else if (a === 'remove') { const snap = clone(st); st.buckets = st.buckets.filter((b) => b.id !== id); commit('Removed', snap); }
+  else if (a === 'addbill') { st.bills.push({ name: '', amount: 0 }); save(); render(); const r = document.querySelectorAll('[data-bn]'); if (r.length) r[r.length - 1].focus(); }
+  else if (a === 'delbill') { st.bills.splice(Number(el.closest('[data-bill]').dataset.bill), 1); save(); render(); }
+  else if (a === 'xlsx') { try { saveFile(`stashly-${stamp()}.xlsx`, buildXlsx(reportSheets(st, todayStr())), 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'); } catch (err) { toast('Export failed: ' + err.message); } }
+  else if (a === 'csv') saveFile(`stashly-${stamp()}.csv`, new TextEncoder().encode(toCsv(reportSheets(st, todayStr()))), 'text/csv');
+  else if (a === 'backup') saveFile(`stashly-backup-${stamp()}.json`, new TextEncoder().encode(JSON.stringify(st, null, 2)), 'application/json');
+  else if (a === 'restore') $('#restoreFile').click();
+  else if (a === 'reset') doReset();
+});
+$app.addEventListener('change', (e) => {
+  const t = e.target;
+  if (t.id === 'restoreFile' && t.files[0]) {
+    const rd = new FileReader();
+    rd.onload = () => {
+      try {
+        const o = JSON.parse(rd.result); if (!validState(o)) throw new Error('bad');
+        openModal('Restore this backup?', '<p style="margin-top:0">This replaces everything currently on this phone with the backup.</p>', [{ label: 'Cancel', cls: 'ghost' }, { label: 'Restore', cls: 'primary', fn: () => { const snap = clone(st); st = o; st.bills = st.bills || []; st.history = st.history || []; commit('Backup restored', snap); } }]);
+      } catch (err) { toast("That file isn't a Stashly backup."); }
+    };
+    rd.readAsText(t.files[0]); t.value = ''; return;
+  }
+  if (t.dataset.set) {
+    const k = t.dataset.set;
+    if (k === 'takeHome') { st.setup.takeHome = num(t); st.setup.configured = st.setup.takeHome > 0; }
+    else if (k === 'nextPayday') { if (!/^\d{4}-\d{2}-\d{2}$/.test(t.value)) return; st.setup.nextPayday = t.value; st.setup.anchorDay = dayOf(t.value); }
+    else if (k === 'freq') { st.setup.freq = t.value; st.setup.anchorDay = dayOf(st.setup.nextPayday); }
+    save(); updateSetupLive();
+  }
+  const row = t.closest && t.closest('[data-bill]');
+  if (row) { const b = st.bills[Number(row.dataset.bill)]; if (b) { if (t.hasAttribute('data-bn')) b.name = t.value.trim(); if (t.hasAttribute('data-ba')) b.amount = num(t); save(); updateSetupLive(); } }
+});
+document.getElementById('tabs').addEventListener('click', (e) => { const b = e.target.closest('[data-tab]'); if (b) go(b.dataset.tab); });
+window.addEventListener('hashchange', () => { const t = location.hash.slice(1); if (TITLES[t] && t !== tab) { tab = t; render(); } });
+document.addEventListener('visibilitychange', () => { if (!document.hidden) render(); });
+render();
+if ('serviceWorker' in navigator && /^(https:|http:\/\/localhost|http:\/\/127\.0\.0\.1)/.test(location.href)) navigator.serviceWorker.register('./sw.js').catch(() => {});
+/*==END UI==*/
+})();
+</script>
+</body>
+</html>
