@@ -82,6 +82,15 @@ nav.tabs button.on{color:var(--g2);background:var(--gl)}
 #toast button{min-height:38px;background:none;color:#8fe3c4;border:0;padding:0 8px}
 .empty{text-align:center;padding:18px 8px}
 details summary{min-height:44px;display:flex;align-items:center;font-weight:700;cursor:pointer}
+.seg{display:flex;gap:6px;margin:0 0 4px}
+.seg button{flex:1 1 0;min-width:0;min-height:44px;padding:0 6px;font-size:14px;border-color:var(--line);color:var(--ink);font-weight:600}
+.seg button[aria-pressed=true]{background:var(--g);border-color:var(--g);color:#fff;font-weight:700}
+.dgrid{display:grid;grid-template-columns:1.5fr .8fr 1fr;gap:8px}
+.dgrid label{margin-top:0}
+.fe{color:var(--bad);font-size:13px;font-weight:600;margin:4px 0 0;min-height:0}
+.pv{margin-top:14px;border-radius:14px;padding:12px 14px;background:var(--gl);border:1px solid #bfe6d7}
+.pv.warn{background:var(--warnbg);border-color:#f1d29b}
+.pv .big{font-size:30px;color:var(--g2)}
 @media (min-width:700px){body{padding-bottom:100px}}
 </style>
 </head>
@@ -97,7 +106,7 @@ details summary{min-height:44px;display:flex;align-items:center;font-weight:700;
 const DAY = 86400000;
 const PPM = { weekly: 52 / 12, biweekly: 26 / 12, semimonthly: 2, monthly: 1 };   // paychecks per month
 const FREQ_LABEL = { weekly: 'Weekly', biweekly: 'Every 2 weeks', semimonthly: 'Twice a month', monthly: 'Monthly' };
-const REPEAT_LABEL = { once: 'One time', every6: 'Every 6 months', yearly: 'Yearly', reserve: 'Rolling reserve' };
+const REPEAT_LABEL = { once: 'One time', monthly: 'Monthly', every6: 'Every 6 months', yearly: 'Yearly', reserve: 'Rolling reserve' };
 const p2 = (n) => String(n).padStart(2, '0');
 const pd = (s) => { const [y, m, d] = s.split('-').map(Number); return Date.UTC(y, m - 1, d); };
 const fd = (ms) => { const t = new Date(ms); return t.getUTCFullYear() + '-' + p2(t.getUTCMonth() + 1) + '-' + p2(t.getUTCDate()); };
@@ -146,7 +155,7 @@ function rollMonths(due, months, anchor, minDate) {
   do { d = addMonths(d, months, anchor); } while (d < minDate && ++guard < 600);
   return d;
 }
-const repeatMonths = (r) => (r === 'every6' ? 6 : r === 'yearly' ? 12 : r === 'reserve' ? 6 : 0);
+const repeatMonths = (r) => (r === 'monthly' ? 1 : r === 'every6' ? 6 : r === 'yearly' ? 12 : r === 'reserve' ? 6 : 0);
 // reserve "fund by" date that has already passed rolls forward 6 months at a time
 function effectiveDue(b, today) {
   if (b.repeat === 'reserve' && b.due < today) return rollMonths(b.due, 6, b.anchorDay || dayOf(b.due), today);
@@ -255,6 +264,37 @@ function logSpend(st, id, paid, today) {
 function newBucket(o) {
   const due = o.due;
   return Object.assign({ id: uid(), name: 'New pocket', amount: 0, due, repeat: 'once', saved: 0, anchorDay: dayOf(due), done: false }, o, { anchorDay: dayOf(due) });
+}
+// ---- "Add annual bill" helpers ----
+const ANNUAL_REPEATS = ['yearly', 'every6', 'monthly'];   // yearly is the main path; the others are quick options
+// month (1-12) + day + year -> 'YYYY-MM-DD', or null when it isn't a real calendar date (e.g. Feb 30, Feb 29 in a non-leap year)
+function dueFromParts(y, m, d) {
+  y = Number(y); m = Number(m); d = Number(d);
+  if (![y, m, d].every(Number.isInteger) || y < 1900 || y > 2999 || m < 1 || m > 12 || d < 1 || d > dim(y, m - 1)) return null;
+  return y + '-' + p2(m) + '-' + p2(d);
+}
+// the year of the next time month/day happens (today counts); skips years where the day doesn't exist (Feb 29)
+function nextOccurrenceYear(m, d, today) {
+  let y = Number(today.slice(0, 4));
+  for (let i = 0; i < 9; i++, y++) { const due = dueFromParts(y, m, d); if (due && due >= today) return y; }
+  return Number(today.slice(0, 4));
+}
+// validates the Add annual bill form and builds the pocket it would create. f: {name, amount, month, day, year, saved, repeat}
+function annualDraft(f, today) {
+  const amountC = toC(f.amount), savedC = Math.max(0, toC(f.saved)), errors = {};
+  const due = dueFromParts(f.year, f.month, f.day);
+  if (!String(f.name || '').trim()) errors.name = 'Enter a name';
+  if (!(amountC > 0)) errors.amount = 'Enter the amount';
+  if (!due) errors.date = 'bad'; else if (due < today) errors.date = 'past';
+  const repeat = ANNUAL_REPEATS.includes(f.repeat) ? f.repeat : 'yearly';
+  const bucket = due ? newBucket({ name: String(f.name || '').trim() || 'Annual bill', amount: fromC(amountC), repeat, due, saved: fromC(savedC), example: false }) : null;
+  return { errors, ok: Object.keys(errors).length === 0, bucket };
+}
+// live preview: the same math the plan uses, so what she sees in the form is what lands in the plan
+function annualPreview(draft, st, today) {
+  if (!draft.bucket || draft.errors.amount || draft.errors.date) return null;
+  const row = calcBucket(draft.bucket, st.setup, today), cur = computePlan(st, today);
+  return Object.assign({}, row, { totalBeforeC: cur.totalPerC, totalAfterC: cur.totalPerC + row.perC, takeC: cur.takeC });
 }
 function seedState(today) {
   const m = (n) => addMonths(today, n, 1);
@@ -421,7 +461,7 @@ function toCsv(sheets) {
 }
 /*==END XLSX==*/
 
-if (typeof document === 'undefined') { module.exports = { nextPay, genPaydays, addMonths, addDays, calcBucket, computePlan, buildForecast, checkin, logSpend, seedState, validState, buildXlsx, reportSheets, toCsv, crc32, zipStore, semiDays, effectiveDue, rollMonths, daysBetween, toC, newBucket }; }
+if (typeof document === 'undefined') { module.exports = { nextPay, genPaydays, addMonths, addDays, calcBucket, computePlan, buildForecast, checkin, logSpend, seedState, validState, buildXlsx, reportSheets, toCsv, crc32, zipStore, semiDays, effectiveDue, rollMonths, daysBetween, toC, newBucket, dueFromParts, nextOccurrenceYear, annualDraft, annualPreview, ANNUAL_REPEATS }; }
 else (function ui() {
 /*==UI==*/
 const KEY = 'stashly.v1';
@@ -501,10 +541,10 @@ function viewPlan(plan) {
   return h;
 }
 function viewBuckets(plan) {
-  let h = '';
+  let h = `<div class="card hero"><h2>🧾 Annual bills</h2><p class="muted small" style="margin:0 0 10px">Insurance, registration, memberships… Tell me the amount and due date and I'll work out what to set aside every payday.</p><button class="primary huge block" data-act="addannual">🧾 Add annual bill</button></div>`;
   plan.rows.forEach((r) => { h += bucketCard(r, st.buckets.find((b) => b.id === r.id)); });
   st.buckets.filter((b) => b.done).forEach((b) => { h += bucketCard(null, b); });
-  h += `<button class="primary huge block" data-act="add">＋ Add a pocket</button><p class="muted small" style="text-align:center">Tip: pockets marked Example are just guesses. Edit them to match your real bills, or delete the ones you don't need.</p>`;
+  h += `<button class="block" data-act="add">＋ Add another kind of pocket</button><p class="muted small" style="text-align:center">Tip: pockets marked Example are just guesses. Edit them to match your real bills, or delete the ones you don't need.</p>`;
   return h;
 }
 function viewForecast(plan) {
@@ -580,6 +620,59 @@ function editBucket(id) {
   const sync = () => { const r = $('#e_rep').value; $('#e_amtl').textContent = r === 'reserve' ? 'Target to keep in reserve' : 'Amount'; $('#e_duel').textContent = r === 'reserve' ? 'Fund by (goal date)' : 'Due date'; $('#e_hint').textContent = r === 'reserve' ? 'A reserve is money you keep on hand for surprises. When you spend from it, your saved balance goes down and you rebuild it.' : r === 'once' ? 'One-time bills are marked paid after you tap "I paid it".' : 'After you tap "I paid it", the due date moves forward automatically.'; };
   $('#e_rep').onchange = sync; sync();
 }
+function addAnnualBill() {
+  const today = todayStr(), yr = Number(today.slice(0, 4));
+  const f = { name: '', amount: '', month: '', day: '', year: String(yr), saved: '', repeat: 'yearly' };
+  let yearTouched = false;
+  const mo = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  const monthOpts = '<option value="">Month</option>' + mo.map((n, i) => `<option value="${i + 1}">${n}</option>`).join('');
+  const yearOpts = [0, 1, 2, 3].map((i) => `<option value="${yr + i}">${yr + i}</option>`).join('');
+  const seg = ANNUAL_REPEATS.map((k) => `<button type="button" data-rep="${k}" aria-pressed="${k === 'yearly'}">${k === 'every6' ? 'Every 6 months' : REPEAT_LABEL[k]}</button>`).join('');
+  openModal('Add annual bill', `
+    <p class="muted small" style="margin:0">Tell me about the bill. You'll see what it costs each payday before you save.</p>
+    <label for="n_name">Bill name</label><input id="n_name" placeholder="e.g. Car insurance, Amazon Prime" autocomplete="off">
+    <label for="n_amt">Amount</label><div class="money"><input id="n_amt" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00"></div>
+    <label id="n_dl">Next due date <span class="muted" style="font-weight:400">(month, day and year)</span></label>
+    <div class="dgrid"><div><select id="n_mon" aria-label="Month">${monthOpts}</select></div><div><input id="n_day" type="number" inputmode="numeric" min="1" max="31" placeholder="Day" aria-label="Day"></div><div><select id="n_year" aria-label="Year">${yearOpts}</select></div></div>
+    <div class="fe" id="n_derr"></div>
+    <label>Repeats</label><div class="seg" id="n_rep" role="group" aria-label="Repeats">${seg}</div>
+    <label for="n_sav">Already saved toward it <span class="muted" style="font-weight:400">(optional)</span></label><div class="money"><input id="n_sav" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00"></div>
+    <div class="pv" id="n_pv" aria-live="polite"></div>`,
+    [{ label: 'Cancel', cls: 'ghost' }, { label: 'Save bill', cls: 'primary', fn: (o) => {
+      read(); const d = annualDraft(f, today); show(true);
+      if (!d.ok) { const first = d.errors.name ? '#n_name' : d.errors.amount ? '#n_amt' : '#n_day'; $(first, o).focus(); return false; }
+      const snap = clone(st), pv = annualPreview(d, st, today); st.buckets.push(d.bucket);
+      pushHistory(st, today, `Added annual bill ${d.bucket.name}: ${money(toC(d.bucket.amount))}`);
+      commit(pv.remC ? `Added ${d.bucket.name}. Set aside ${money(pv.perC)} each payday` : `Added ${d.bucket.name}`, snap);
+    } }]);
+  const o = $('#modal');
+  const read = () => { f.name = $('#n_name', o).value; f.amount = $('#n_amt', o).value; f.month = $('#n_mon', o).value; f.day = $('#n_day', o).value; f.year = $('#n_year', o).value; f.saved = $('#n_sav', o).value; };
+  let attempted = false;
+  function show(force) {
+    if (force) attempted = true;
+    const d = annualDraft(f, today), pv = annualPreview(d, st, today), box = $('#n_pv', o), de = $('#n_derr', o);
+    de.textContent = f.month && f.day && d.errors.date ? (d.errors.date === 'past' ? 'That date has already passed. Pick the next due date.' : "That month doesn't have that day in that year.") : (attempted && d.errors.date ? 'Pick the month and day it is due.' : '');
+    if (!pv) { box.className = 'pv'; box.innerHTML = `<b>Set aside per paycheck</b><div class="muted small">Fill in the amount and due date to see it.${attempted && d.errors.amount ? ' <span style="color:var(--bad)">Enter the amount.</span>' : ''}</div>`; return; }
+    const every = f.repeat === 'monthly' ? 'month' : f.repeat === 'every6' ? '6 months' : 'year';
+    const bad = pv.status === 'overdue' || pv.status === 'urgent', share = pv.takeC > 0 && pv.perC > 0 ? ` That's ${pctTxt(pv.perC / pv.takeC)} of a ${money(pv.takeC)} paycheck.` : '';
+    box.className = 'pv' + (bad ? ' warn' : '');
+    box.innerHTML = pv.remC === 0 ? `<b>Nothing to set aside</b><div class="muted small">You've already saved the full ${money(pv.amountC)}. Due ${fmtD(pv.due, true)}, then every ${every}.</div>`
+      : `<div class="muted small">Set aside per paycheck</div><div class="big">${money(pv.perC)}</div><div class="muted small">${bad ? `Due before your next payday, so you'd need ${money(pv.remC)} from money you already have.` : `${pv.n} paycheck${pv.n > 1 ? 's' : ''} until ${fmtD(pv.due, true)}, then every ${every}.${share}`}</div>${bad ? '' : `<div class="muted small" style="margin-top:4px">Your total goes from ${money(pv.totalBeforeC)} to <b>${money(pv.totalAfterC)}</b> per paycheck.</div>`}`;
+  }
+  const onIn = () => {
+    read();
+    if (!yearTouched && f.month && f.day) { const y = nextOccurrenceYear(f.month, f.day, today); $('#n_year', o).value = String(y); f.year = String(y); }
+    show();
+  };
+  o.addEventListener('input', onIn); o.addEventListener('change', onIn);
+  $('#n_year', o).addEventListener('change', () => { yearTouched = true; });
+  $('#n_rep', o).addEventListener('click', (e) => {
+    const b = e.target.closest('[data-rep]'); if (!b) return; f.repeat = b.dataset.rep;
+    o.querySelectorAll('[data-rep]').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+    show();
+  });
+  show();
+}
 function adjust(id) {
   const b = st.buckets.find((x) => x.id === id);
   openModal('Adjust saved: ' + b.name, `<p class="muted" style="margin-top:0">Type what you actually have set aside for this pocket right now.</p><label for="a_v">Saved so far</label><div class="money"><input id="a_v" type="number" inputmode="decimal" min="0" step="0.01" value="${b.saved || 0}"></div>`,
@@ -624,6 +717,7 @@ $app.addEventListener('click', (e) => {
   const id = (el.closest('[data-id]') || {}).dataset ? el.closest('[data-id]').dataset.id : null, a = el.dataset.act;
   if (a === 'paid') gotPaid();
   else if (a === 'add') editBucket(null);
+  else if (a === 'addannual') addAnnualBill();
   else if (a === 'edit') editBucket(id);
   else if (a === 'adjust') adjust(id);
   else if (a === 'spend') spend(id);

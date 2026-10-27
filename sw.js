@@ -1,5 +1,5 @@
 /* Offline cache: precache the app shell, then stale-while-revalidate. Bump VERSION to force an update. */
-const VERSION = 'stashly-v2';
+const VERSION = 'stashly-v3';
 const ASSETS = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
 
 self.addEventListener('install', (e) => {
